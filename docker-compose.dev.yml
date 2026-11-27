@@ -6,7 +6,8 @@ services:
     build:
       context: ./backend
       target: build
-    command: sh -c "composer install --no-interaction && php artisan serve --host=0.0.0.0 --port=8000"
+    # "composer setup" installs dependencies and creates .env from .env.example on a fresh clone.
+    command: sh -c "composer setup --no-interaction && php artisan serve --host=0.0.0.0 --port=8000"
     volumes:
       - ./backend:/app
     environment:
