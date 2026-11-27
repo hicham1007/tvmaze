@@ -1,0 +1,72 @@
+# This file is a template: the nginx image replaces ${VARIABLES} that exist in
+# the environment and leaves nginx's own $variables untouched.
+
+# With API_SAME_ORIGIN_ONLY=on, only requests the browser marks as same-origin reach the API.
+map "${API_SAME_ORIGIN_ONLY}:$http_sec_fetch_site" $api_forbidden {
+    default                 0;
+    "on:same-origin"        0;
+    "~^on:"                 1;
+}
+
+server {
+    listen 8080;
+    server_tokens off;
+    server_name _;
+
+    # Resolve the service names through Docker's DNS on every request (cached 10 s)
+    # instead of once at start-up, so nginx keeps working when a container is
+    # recreated and gets a new IP.
+    resolver 127.0.0.11 valid=10s;
+    set $backend backend:9000;
+    set $frontend http://frontend:8080;
+
+    gzip on;
+    gzip_types application/json application/javascript text/css image/svg+xml;
+
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+    add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    location /api/ {
+        default_type application/json;
+        if ($api_forbidden) {
+            return 403 '{"message":"This API only accepts requests from its own frontend.","code":"cross_site_request"}';
+        }
+
+        # Every /api request goes to Laravel's front controller, over FastCGI.
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME /app/public/index.php;
+        fastcgi_param SCRIPT_NAME /index.php;
+        fastcgi_pass $backend;
+        fastcgi_hide_header X-Powered-By;
+
+        # If the backend itself is down, still answer in JSON like the rest of the API.
+        error_page 502 504 = @backend_down;
+
+        # The backend gives TVMaze at most ~10 s (2 tries x 5 s) before answering 504 itself.
+        fastcgi_connect_timeout 3s;
+        fastcgi_read_timeout 15s;
+    }
+
+    location @backend_down {
+        default_type application/json;
+        return 502 '{"message":"The API is not available right now.","code":"backend_unavailable"}';
+    }
+
+    location / {
+        # The page may only load its own scripts and styles, and images from TVMaze.
+        # (add_header here replaces the ones above, so they are repeated.)
+        add_header Content-Security-Policy "default-src 'self'; img-src 'self' https://static.tvmaze.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
+        add_header X-Content-Type-Options nosniff always;
+        add_header X-Frame-Options DENY always;
+        add_header Referrer-Policy strict-origin-when-cross-origin always;
+
+        proxy_pass $frontend;
+    }
+}

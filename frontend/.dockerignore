@@ -1,0 +1,15 @@
+# Version control and local settings
+.git
+.gitignore
+.env
+.env.*
+
+# Installed and built inside the image
+node_modules
+dist
+
+# Not needed to build the application
+Dockerfile
+.dockerignore
+README.md
+.pnpm-store
