@@ -1,6 +1,6 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "hays/series-api",
+    "name": "tvmaze/series-api",
     "type": "project",
     "description": "JSON API to search TV shows, backed by TVMaze.",
     "keywords": [

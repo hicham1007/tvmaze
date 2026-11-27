@@ -1,5 +1,5 @@
 # Development: code mounted from the host, Vite and artisan serve with live reload.
-name: hays-dev
+name: tvmaze-dev
 
 services:
   backend:
