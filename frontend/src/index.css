@@ -1,0 +1,27 @@
+@import 'tailwindcss';
+
+/* Streaming-style dark theme: near-black canvas, white type, one red accent. */
+@theme {
+  --color-base: #141414;
+  --color-surface: #1f1f1f;
+  --color-raised: #2f2f2f;
+  --color-line: #404040;
+  --color-muted: #b3b3b3;
+  --color-dim: #808080;
+  --color-accent: #e50914;
+  --color-accent-hover: #f6121d;
+  --color-score: #46d369;
+  --font-sans: 'Helvetica Neue', Helvetica, Arial, ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-base min-h-screen text-white antialiased;
+}
+
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-white;
+}
